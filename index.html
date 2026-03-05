@@ -13,14 +13,24 @@
         .nav button.active { background: #d32f2f; color: white; }
         input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
         .btn-enviar { background: #2e7d32; color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 16px; margin-top: 10px; cursor: pointer; }
+        
+        /* Disseny Rànquing */
+        .ranking-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; font-size: 16px; }
+        .btn-detalls { background: #1976d2; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; margin-left: 10px; }
+        
+        /* Finestra Emergent (Modal) */
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 20% auto; padding: 20px; border-radius: 12px; width: 80%; max-width: 400px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .close { font-size: 28px; font-weight: bold; cursor: pointer; color: #666; }
+        .top5-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #ddd; }
+
+        /* Altres eines */
         .btn-delete { background: #ff4d4d; color: white; border: none; padding: 5px; border-radius: 5px; cursor: pointer; }
         .btn-edit { background: #ffa000; color: white; border: none; padding: 5px; border-radius: 5px; cursor: pointer; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
         th, td { border: 1px solid #eee; padding: 10px; text-align: left; }
-        th { background: #f8f9fa; }
         .total-box { font-size: 22px; font-weight: bold; color: #d32f2f; margin: 15px 0; text-align: center; background: #fff5f5; padding: 10px; border-radius: 8px; }
-        .ranking-row { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #eee; font-size: 16px; }
-        .ranking-row b { color: #d32f2f; }
         #admin-panel { display: none; }
     </style>
 </head>
@@ -39,6 +49,16 @@
         </div>
     </div>
 
+    <div id="modalTop5" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalCollaNom" style="margin:0; color:#d32f2f;">Top 5 Diades</h3>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div id="modalBody" style="margin-top:15px;"></div>
+        </div>
+    </div>
+
     <div id="tab-historic" class="tab-content" style="display:none;">
         <div class="card">
             <h2>Històric de Diades</h2>
@@ -48,7 +68,7 @@
 
     <div id="admin-panel" class="tab-content">
         <div class="card">
-            <h2 id="form-title">Nova Diada (Admin)</h2>
+            <h2 id="form-title">Panell Administrador</h2>
             <form id="castellsForm">
                 <input type="hidden" id="editRowIndex" value="">
                 <input type="text" id="diada" placeholder="Nom de la Diada" required>
@@ -64,86 +84,102 @@
                     <option>SubVella</option>
                     <option>Xiquets de Rallats</option>
                 </select>
-
-                <p><b>Rondes (Sumen punts):</b></p>
+                <p><b>Castells:</b></p>
                 <div style="display:flex; gap:5px;"><select id="r1" onchange="calcTotal()"></select><select id="e1" onchange="calcTotal()"><option value="d">D</option><option value="c">C</option></select></div>
                 <div style="display:flex; gap:5px;"><select id="r2" onchange="calcTotal()"></select><select id="e2" onchange="calcTotal()"><option value="d">D</option><option value="c">C</option></select></div>
                 <div style="display:flex; gap:5px;"><select id="r3" onchange="calcTotal()"></select><select id="e3" onchange="calcTotal()"><option value="d">D</option><option value="c">C</option></select></div>
-                
-                <p><b>Pilar de Mèrit (Filtre P, no suma punts):</b></p>
+                <p><b>Pilar de Mèrit (Filtre P, no suma):</b></p>
                 <div style="display:flex; gap:5px;"><select id="pilarNom"></select><select id="pilarEstat"><option value="d">D</option><option value="c">C</option></select></div>
-                
-                <p><b>Anotacions:</b></p>
-                <input type="text" id="extraTxt" placeholder="Extres (pilar caminant, etc.)">
+                <input type="text" id="extraTxt" placeholder="Extres (pilar caminant...)">
                 <textarea id="comentaris" placeholder="Comentaris..."></textarea>
-
                 <div class="total-box">TOTAL DIADA: <span id="totalTxt">0</span> pts</div>
                 <button type="submit" id="btn-submit" class="btn-enviar">Guardar Diada</button>
-                <button type="button" id="btn-cancel" style="display:none; background:#666; color:white; border:none; padding:10px; width:100%; border-radius:8px; margin-top:5px;" onclick="cancelEdit()">Cancel·lar</button>
             </form>
         </div>
     </div>
 
     <script>
-        // URL ACTUALITZADA AMB EL TEU ENLLAÇ
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx4TZngZkTFu7-5I4PDKB3sxfjJ5DjieAHN7tUGuV6YGlt3H2niynUXrgxTkDKeB0QAfw/exec"; 
         const PIN_ADMIN = "ACCSC3d9f";
         let isAdmin = false;
-        let dadesCache = [];
+        let dadesGlobal = [];
+        let top5PerColla = {};
 
         const punts = {"pd4n":{"d":35,"c":18},"pd4":{"d":45,"c":23},"pd5n":{"d":55,"c":28},"pd5":{"d":65,"c":33},"pd6n":{"d":75,"c":38},"pd6":{"d":85,"c":43},"2d6n":{"d":135,"c":68},"2d6":{"d":140,"c":70},"2d7n":{"d":170,"c":85},"2d7":{"d":180,"c":90},"3d6n":{"d":245,"c":123},"4d6n":{"d":250,"c":125},"3d6":{"d":255,"c":128},"4d6":{"d":260,"c":130},"2d6an":{"d":265,"c":133},"pd7n":{"d":270,"c":135},"2d6a":{"d":275,"c":138},"pd7":{"d":280,"c":140},"4d6an":{"d":285,"c":143},"3d6an":{"d":290,"c":145},"4d6a":{"d":295,"c":148},"3d6a":{"d":300,"c":150},"pd8n":{"d":360,"c":180},"pd8":{"d":370,"c":185},"3d7n":{"d":395,"c":198},"3d7":{"d":405,"c":203},"2d8n":{"d":410,"c":205},"4d7n":{"d":415,"c":208},"2d8sf":{"d":420,"c":210},"4d7":{"d":425,"c":213},"pd7f":{"d":450,"c":225},"2d8f":{"d":500,"c":250},"pd9n":{"d":500,"c":250},"3d7an":{"d":515,"c":258},"3d7a":{"d":525,"c":263},"4d7an":{"d":545,"c":273},"pd9sf":{"d":550,"c":275},"4d7a":{"d":555,"c":278},"5d6n":{"d":595,"c":298},"pd8f":{"d":600,"c":300},"5d6":{"d":605,"c":303},"7d6n":{"d":715,"c":358},"7d6":{"d":725,"c":363},"5d6an":{"d":755,"c":378},"5d6a":{"d":775,"c":388},"pd8fm":{"d":780,"c":390},"pd9f":{"d":800,"c":400},"3d8n":{"d":845,"c":423},"3d8":{"d":865,"c":433},"7d6an":{"d":885,"c":443},"7d6a":{"d":895,"c":448},"pd9fm":{"d":900,"c":450},"2d9n":{"d":900,"c":450},"3d8an":{"d":950,"c":475},"2d9sf":{"d":950,"c":475},"3d8a":{"d":960,"c":480},"5d7n":{"d":965,"c":483},"4d8n":{"d":970,"c":485},"5d7":{"d":975,"c":488},"4d8":{"d":990,"c":495},"2d9f":{"d":1000,"c":500},"pd9fmp":{"d":1000,"c":500},"3d9n":{"d":1050,"c":525},"4d8an":{"d":1050,"c":525},"4d8a":{"d":1060,"c":530},"5d7an":{"d":1070,"c":535},"5d7a":{"d":1080,"c":540},"7d7n":{"d":1095,"c":548},"3d9sf":{"d":1100,"c":550},"2d9fm":{"d":1100,"c":550},"7d7":{"d":1105,"c":553},"7d7an":{"d":1190,"c":595},"3d9f":{"d":1200,"c":600},"7d7a":{"d":1210,"c":605},"4d9n":{"d":1450,"c":725},"4d9sf":{"d":1500,"c":750},"pd10n":{"d":1500,"c":750},"9d6n":{"d":1540,"c":770},"pd10sf":{"d":1550,"c":775},"9d6":{"d":1560,"c":780},"2d10n":{"d":1600,"c":800},"pd10f":{"d":1650,"c":825},"5d8n":{"d":1670,"c":835},"2d10sf":{"d":1700,"c":850},"3d9an":{"d":1700,"c":850},"3d9a":{"d":1750,"c":875},"pd10fm":{"d":1750,"c":875},"9d7n":{"d":1750,"c":875},"5d8":{"d":1790,"c":895},"7d8n":{"d":1795,"c":898},"4d9f":{"d":1800,"c":900},"2d10f":{"d":1800,"c":900},"4d9an":{"d":1800,"c":900},"9d7":{"d":1800,"c":900},"7d8":{"d":1815,"c":908},"3d9fa":{"d":1850,"c":925},"4d9a":{"d":1850,"c":925},"5d8an":{"d":1915,"c":958},"5d8a":{"d":1935,"c":968},"4d9fa":{"d":1950,"c":975},"pd10fmp":{"d":1980,"c":990},"2d10fm":{"d":2000,"c":1000},"2d10fmp":{"d":2200,"c":1100},"5d9n":{"d":2700,"c":1350},"5d9sf":{"d":2750,"c":1375},"5d9f":{"d":2850,"c":1425},"3d10n":{"d":2900,"c":1450},"3d10sf":{"d":2950,"c":1475},"3d10f":{"d":3050,"c":1525},"3d10fm":{"d":3150,"c":1575},"pd10fmpa":{"d":3300,"c":1650}};
 
-        const castList = Object.keys(punts);
+        const cKeys = Object.keys(punts);
         ["r1", "r2", "r3", "pilarNom"].forEach(id => {
-            const select = document.getElementById(id);
-            select.innerHTML = `<option value="">-- Tria Castell --</option>`;
-            castList.forEach(k => {
+            const s = document.getElementById(id);
+            s.innerHTML = `<option value="">-- Tria Castell --</option>`;
+            cKeys.forEach(k => {
                 if(id === "pilarNom" && !k.toLowerCase().startsWith('p')) return;
-                let opt = document.createElement("option"); opt.value = k; opt.innerText = k; select.appendChild(opt);
+                let o = document.createElement("option"); o.value = k; o.innerText = k; s.appendChild(o);
             });
         });
 
         function calcTotal() {
-            let total = 0;
+            let t = 0;
             [1,2,3].forEach(i => {
                 let c = document.getElementById("r"+i).value;
                 let m = document.getElementById("e"+i).value;
-                if(punts[c]) total += punts[c][m];
+                if(punts[c]) t += punts[c][m];
             });
-            document.getElementById("totalTxt").innerText = total;
-            return total;
+            document.getElementById("totalTxt").innerText = t;
+            return t;
         }
 
         async function loadData() {
-            try {
-                const res = await fetch(WEB_APP_URL);
-                dadesCache = await res.json();
-                renderRanking(dadesCache);
-                renderHistoric(dadesCache);
-            } catch (e) { console.error("Error", e); }
+            const res = await fetch(WEB_APP_URL);
+            dadesGlobal = await res.json();
+            renderRanking(dadesGlobal);
+            renderHistoric(dadesGlobal);
         }
 
         function renderRanking(rows) {
             const colles = {};
             rows.slice(1).forEach(r => {
-                const colla = r[0], pts = parseFloat(r[11]) || 0;
-                if(!colles[colla]) colles[colla] = [];
-                colles[colla].push(pts);
+                const c = r[0], d = r[1], p = parseFloat(r[11]) || 0;
+                if(!colles[c]) colles[c] = [];
+                colles[c].push({ diada: d, punts: p });
             });
-            let ordenat = Object.keys(colles).map(c => {
-                const suma = colles[c].sort((a,b) => b-a).slice(0,5).reduce((a,b) => a+b, 0);
+
+            top5PerColla = {};
+            let ranked = Object.keys(colles).map(c => {
+                const top5 = colles[c].sort((a,b) => b.punts - a.punts).slice(0,5);
+                top5PerColla[c] = top5;
+                const suma = top5.reduce((acc, v) => acc + v.punts, 0);
                 return { nom: c, total: suma };
             }).sort((a,b) => b.total - a.total);
+
             let h = "";
-            ordenat.forEach((c, i) => { h += `<div class="ranking-row"><span>#${i+1} ${c.nom}</span> <b>${c.total} pts</b></div>`; });
+            ranked.forEach((c, i) => {
+                h += `
+                <div class="ranking-row">
+                    <span>#${i+1} ${c.nom}</span>
+                    <div>
+                        <b style="color:#d32f2f">${c.total} pts</b>
+                        <button class="btn-detalls" onclick="openModal('${c.nom}')">Veure Top 5</button>
+                    </div>
+                </div>`;
+            });
             document.getElementById("ranking-list").innerHTML = h || "Buit.";
         }
 
+        function openModal(colla) {
+            document.getElementById("modalCollaNom").innerText = colla;
+            const diades = top5PerColla[colla] || [];
+            let h = diades.map(d => `<div class="top5-item"><span>${d.diada}</span> <b>${d.punts}</b></div>`).join("");
+            document.getElementById("modalBody").innerHTML = h || "Cap dada.";
+            document.getElementById("modalTop5").style.display = "block";
+        }
+
+        function closeModal() { document.getElementById("modalTop5").style.display = "none"; }
+
         function renderHistoric(rows) {
-            let h = "<table><tr><th>Data</th><th>Colla</th><th>Pilar</th><th>Total</th><th>Acció</th></tr>";
+            let h = "<table><tr><th>Data</th><th>Colla</th><th>Pilar</th><th>Total</th><th>Eines</th></tr>";
             rows.slice(1).reverse().forEach((r, i) => {
-                let realIdx = rows.length - 1 - i;
-                let btns = isAdmin ? `<button class="btn-edit" onclick="editRow(${realIdx})">✏️</button> <button class="btn-delete" onclick="deleteRow(${realIdx})">🗑️</button>` : "-";
+                let ri = rows.length - 1 - i;
+                let btns = isAdmin ? `<button class="btn-edit" onclick="editRow(${ri})">✏️</button> <button class="btn-delete" onclick="deleteRow(${ri})">🗑️</button>` : "-";
                 h += `<tr><td>${r[2]}</td><td>${r[0]}</td><td style="color:#d32f2f">${r[9]}</td><td><b>${r[11]}</b></td><td>${btns}</td></tr>`;
             });
             document.getElementById("historic-list").innerHTML = h + "</table>";
@@ -153,61 +189,12 @@
             if (prompt("PIN:") === PIN_ADMIN) { isAdmin = true; showTab('admin-panel'); loadData(); }
         }
 
-        function editRow(idx) {
-            const r = dadesCache[idx];
-            document.getElementById("editRowIndex").value = idx;
-            document.getElementById("colla").value = r[0];
-            document.getElementById("diada").value = r[1];
-            document.getElementById("data").value = r[2];
-            document.getElementById("r1").value = r[3];
-            document.getElementById("r2").value = r[5];
-            document.getElementById("r3").value = r[7];
-            document.getElementById("pilarNom").value = r[9].split(" (")[0];
-            document.getElementById("extraTxt").value = r[10];
-            document.getElementById("comentaris").value = r[12];
-            document.getElementById("btn-cancel").style.display = "block";
-            showTab('admin-panel'); calcTotal();
-        }
-
-        function cancelEdit() { document.getElementById("castellsForm").reset(); document.getElementById("editRowIndex").value = ""; document.getElementById("btn-cancel").style.display = "none"; }
-
-        async function deleteRow(idx) {
-            if(confirm("Esborrar?")) {
-                await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({action: "delete", rowIndex: idx}) });
-                loadData();
-            }
-        }
-
-        document.getElementById("castellsForm").onsubmit = async (e) => {
-            e.preventDefault();
-            const editIdx = document.getElementById("editRowIndex").value;
-            const d = {
-                action: editIdx ? "update" : "insert",
-                rowIndex: editIdx ? parseInt(editIdx) : null,
-                colla: document.getElementById("colla").value,
-                diada: document.getElementById("diada").value,
-                data: document.getElementById("data").value,
-                r1: document.getElementById("r1").value,
-                p1: punts[document.getElementById("r1").value]?.[document.getElementById("e1").value] || 0,
-                r2: document.getElementById("r2").value,
-                p2: punts[document.getElementById("r2").value]?.[document.getElementById("e2").value] || 0,
-                r3: document.getElementById("r3").value,
-                p3: punts[document.getElementById("r3").value]?.[document.getElementById("e3").value] || 0,
-                pilar: document.getElementById("pilarNom").value + " (" + document.getElementById("pilarEstat").value + ")",
-                extra: document.getElementById("extraTxt").value,
-                total: calcTotal(),
-                comentaris: document.getElementById("comentaris").value
-            };
-            await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(d) });
-            location.reload();
-        };
-
         function showTab(t) {
             document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
             document.getElementById('tab-' + t).style.display = 'block';
             document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
-            if(t === 'ranking') document.getElementById('btn-rank').classList.add('active');
-            if(t === 'historic') document.getElementById('btn-hist').classList.add('active');
+            if(t==='ranking') document.getElementById('btn-rank').classList.add('active');
+            if(t==='historic') document.getElementById('btn-hist').classList.add('active');
             if(t !== 'admin-panel') loadData();
         }
 
