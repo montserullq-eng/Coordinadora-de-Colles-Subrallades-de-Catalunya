@@ -19,14 +19,9 @@
         th, td { border: 1px solid #eee; padding: 8px; text-align: left; }
         th { background: #f8f9fa; }
         .total-box { font-size: 22px; font-weight: bold; color: #d32f2f; margin: 15px 0; text-align: center; background: #fff5f5; padding: 10px; border-radius: 8px; }
-        
-        /* Estilos Ranking Interactivo */
         .ranking-item { border-bottom: 1px solid #eee; padding: 10px 0; cursor: pointer; }
         .ranking-header { display: flex; justify-content: space-between; align-items: center; font-size: 17px; font-weight: bold; }
-        .colla-punts { color: #d32f2f; font-size: 18px; }
-        .top5-details { display: none; background: #f9f9f9; padding: 10px; margin-top: 5px; border-radius: 8px; font-size: 14px; color: #555; }
-        .top5-details div { border-bottom: 1px dashed #ddd; padding: 3px 0; display: flex; justify-content: space-between; }
-        
+        .top5-details { display: none; background: #f9f9f9; padding: 10px; margin-top: 5px; border-radius: 8px; font-size: 14px; }
         #admin-panel { display: none; }
     </style>
 </head>
@@ -41,7 +36,6 @@
     <div id="tab-ranking" class="tab-content">
         <div class="card">
             <h2>Top 5 Millors Diades</h2>
-            <p style="font-size: 0.8em; color: #666;">Clica una colla per veure el detall de les seves 5 millors diades.</p>
             <div id="ranking-list">Carregant rànquing...</div>
         </div>
     </div>
@@ -55,7 +49,7 @@
 
     <div id="admin-panel" class="tab-content">
         <div class="card">
-            <h2 id="form-title">Nova Diada (Admin)</h2>
+            <h2 id="form-title">Gestió de Diada</h2>
             <form id="castellsForm">
                 <input type="hidden" id="editRowIndex" value="">
                 <input type="text" id="diada" placeholder="Nom de la Diada" required>
@@ -72,7 +66,7 @@
                     <option>Xiquets de Rallats</option>
                 </select>
 
-                <p><b>Castells:</b></p>
+                <p><b>Rondes (Sumen punts):</b></p>
                 <div style="display:flex; gap:5px;"><select id="r1" onchange="calcTotal()"></select><select id="e1" onchange="calcTotal()"><option value="d">D</option><option value="c">C</option></select></div>
                 <div style="display:flex; gap:5px;"><select id="r2" onchange="calcTotal()"></select><select id="e2" onchange="calcTotal()"><option value="d">D</option><option value="c">C</option></select></div>
                 <div style="display:flex; gap:5px;"><select id="r3" onchange="calcTotal()"></select><select id="e3" onchange="calcTotal()"><option value="d">D</option><option value="c">C</option></select></div>
@@ -80,8 +74,10 @@
                 <p><b>Pilar de Mèrit (No suma punts):</b></p>
                 <div style="display:flex; gap:5px;"><select id="pilarNom"></select><select id="pilarEstat"><option value="d">D</option><option value="c">C</option></select></div>
                 
-                <input type="text" id="extraTxt" placeholder="Altres extres...">
-                <div class="total-box">TOTAL (sense pilar): <span id="totalTxt">0</span> pts</div>
+                <p><b>Extres (No sumen punts):</b></p>
+                <input type="text" id="extraTxt" placeholder="Ex: pilar caminant, pd4 canalla...">
+
+                <div class="total-box">TOTAL DIADA: <span id="totalTxt">0</span> pts</div>
                 <textarea id="comentaris" placeholder="Comentaris..."></textarea>
                 <button type="submit" id="btn-submit" class="btn-enviar">Publicar Diada</button>
                 <button type="button" id="btn-cancel" style="display:none; background:#666; color:white; border:none; padding:10px; width:100%; border-radius:8px; margin-top:5px;" onclick="cancelEdit()">Cancel·lar</button>
@@ -112,19 +108,8 @@
                 let m = document.getElementById("e"+i).value;
                 if(punts[c]) total += punts[c][m];
             });
-            // El Pilar de mérito NO suma puntos aquí
             document.getElementById("totalTxt").innerText = total;
             return total;
-        }
-
-        function checkAdmin() {
-            const pin = prompt("PIN Admin:");
-            if (pin === PIN_ADMIN) { isAdmin = true; showTab('admin-panel'); loadData(); }
-        }
-
-        function toggleDetails(id) {
-            const el = document.getElementById(id);
-            el.style.display = (el.style.display === "block") ? "none" : "block";
         }
 
         async function loadData() {
@@ -137,60 +122,48 @@
         function renderRanking(rows) {
             const colles = {};
             rows.slice(1).forEach(r => {
-                const colla = r[0];
-                const diadaNom = r[1];
-                const total = parseFloat(r[11]) || 0;
+                const colla = r[0], diada = r[1], puntsVal = parseFloat(r[11]) || 0;
                 if(!colles[colla]) colles[colla] = [];
-                colles[colla].push({ nom: diadaNom, punts: total });
+                colles[colla].push({ nom: diada, pts: puntsVal });
             });
 
             let ranked = Object.keys(colles).map(c => {
-                const top5 = colles[c].sort((a,b) => b.punts - a.punts).slice(0,5);
-                const suma = top5.reduce((a,b) => a + b.punts, 0);
-                return { nom: c, suma: suma, top5: top5 };
+                const top5 = colles[c].sort((a,b) => b.pts - a.pts).slice(0,5);
+                return { nom: c, suma: top5.reduce((a,b) => a + b.pts, 0), list: top5 };
             }).sort((a,b) => b.suma - a.suma);
 
             let html = "";
             ranked.forEach((c, i) => {
-                const detailId = `detail-${i}`;
-                let top5Html = c.top5.map(d => `<div><span>${d.nom}</span> <b>${d.punts}</b></div>`).join("");
-                
-                html += `
-                <div class="ranking-item" onclick="toggleDetails('${detailId}')">
-                    <div class="ranking-header">
-                        <span>#${i+1} ${c.nom}</span>
-                        <span class="colla-punts">${c.suma}</span>
-                    </div>
-                    <div id="${detailId}" class="top5-details">
-                        <strong>Top 5 Diades:</strong>
-                        ${top5Html || "Cap dada disponible"}
-                    </div>
+                const detId = `det-${i}`;
+                let listHtml = c.list.map(d => `<div>${d.nom}: <b>${d.pts}</b></div>`).join("");
+                html += `<div class="ranking-item" onclick="toggleDet('${detId}')">
+                    <div class="ranking-header"><span>#${i+1} ${c.nom}</span><span style="color:#d32f2f">${c.suma}</span></div>
+                    <div id="${detId}" class="top5-details">${listHtml}</div>
                 </div>`;
             });
-            document.getElementById("ranking-list").innerHTML = html || "Sense dades.";
+            document.getElementById("ranking-list").innerHTML = html || "Buit";
         }
 
         function renderHistoric(rows) {
-            let html = "<table><tr><th>Data</th><th>Colla</th><th>Castells</th><th>Pilar</th><th>Total</th><th>Accions</th></tr>";
+            let html = "<table><tr><th>Data</th><th>Colla</th><th>Pilar</th><th>Total</th><th>Eines</th></tr>";
+            // Netegem la llista de duplicats visuals usant un filtre (slice(1) agafa les dades reals)
             rows.slice(1).reverse().forEach((r, i) => {
                 let realIdx = rows.length - 1 - i;
-                // Formato castells: r1, r2, r3
-                let castells = `${r[3]}, ${r[5]}, ${r[7]}`;
-                let btns = isAdmin ? `<button class="btn-edit" onclick="editRow(${realIdx})">✏️</button><button class="btn-delete" onclick="deleteRow(${realIdx})">🗑️</button>` : "-";
-                
-                html += `<tr>
-                    <td>${r[2]}</td>
-                    <td><b>${r[0]}</b></td>
-                    <td>${castells}</td>
-                    <td style="color:#d32f2f">${r[9]}</td>
-                    <td><b>${r[11]}</b></td>
-                    <td>${btns}</td>
-                </tr>`;
+                let btns = isAdmin ? `<button class="btn-edit" onclick="editRow(${realIdx})">✏️</button> <button class="btn-delete" onclick="deleteRow(${realIdx})">🗑️</button>` : "-";
+                html += `<tr><td>${r[2]}</td><td>${r[0]}</td><td style="color:#d32f2f">${r[9]}</td><td><b>${r[11]}</b></td><td>${btns}</td></tr>`;
             });
             document.getElementById("historic-list").innerHTML = html + "</table>";
         }
 
-        // --- Funciones de Formulario (Editar / Guardar) ---
+        function toggleDet(id) {
+            const el = document.getElementById(id);
+            el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+        }
+
+        function checkAdmin() {
+            if (prompt("PIN:") === PIN_ADMIN) { isAdmin = true; showTab('admin-panel'); loadData(); }
+        }
+
         function editRow(idx) {
             const r = allRowsData[idx];
             document.getElementById("editRowIndex").value = idx;
@@ -203,34 +176,22 @@
             document.getElementById("pilarNom").value = r[9].split(" (")[0];
             document.getElementById("extraTxt").value = r[10];
             document.getElementById("comentaris").value = r[12];
-            
-            document.getElementById("form-title").innerText = "Modificar Diada";
-            document.getElementById("btn-submit").innerText = "Guardar Canvis";
             document.getElementById("btn-cancel").style.display = "block";
-            showTab('admin-panel');
-            calcTotal();
+            showTab('admin-panel'); calcTotal();
         }
 
-        function cancelEdit() {
-            document.getElementById("castellsForm").reset();
-            document.getElementById("editRowIndex").value = "";
-            document.getElementById("form-title").innerText = "Nova Diada (Admin)";
-            document.getElementById("btn-submit").innerText = "Publicar Diada";
-            document.getElementById("btn-cancel").style.display = "none";
-        }
+        function cancelEdit() { document.getElementById("castellsForm").reset(); document.getElementById("editRowIndex").value = ""; document.getElementById("btn-cancel").style.display = "none"; }
 
         async function deleteRow(idx) {
-            if(!confirm("Segur que vols esborrar?")) return;
-            await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({action: "delete", rowIndex: idx}) });
-            loadData();
+            if(confirm("Esborrar?")) {
+                await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({action: "delete", rowIndex: idx}) });
+                loadData();
+            }
         }
 
         document.getElementById("castellsForm").onsubmit = async (e) => {
             e.preventDefault();
             const editIdx = document.getElementById("editRowIndex").value;
-            const btn = document.getElementById("btn-submit");
-            btn.innerText = "Processant..."; btn.disabled = true;
-
             const d = {
                 action: editIdx ? "update" : "insert",
                 rowIndex: editIdx ? parseInt(editIdx) : null,
@@ -245,8 +206,20 @@
                 p3: punts[document.getElementById("r3").value]?.[document.getElementById("e3").value] || 0,
                 pilar: document.getElementById("pilarNom").value + " (" + document.getElementById("pilarEstat").value + ")",
                 extra: document.getElementById("extraTxt").value,
-                total: calcTotal(), // El total ahora se calcula sin el pilar
+                total: calcTotal(),
                 comentaris: document.getElementById("comentaris").value
             };
+            await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(d) });
+            location.reload();
+        };
 
-            await fetch(WEB_APP_URL, { method: 'POST', body: JSON.
+        function showTab(t) {
+            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+            document.getElementById('tab-' + t).style.display = 'block';
+            if(t !== 'admin-panel') loadData();
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
