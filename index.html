@@ -18,6 +18,7 @@
         .total-box { font-size: 22px; font-weight: bold; color: #d32f2f; text-align: center; background: #fff5f5; padding: 15px; border-radius: 8px; margin: 10px 0; border: 2px dashed #d32f2f; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
         th, td { border: 1px solid #eee; padding: 8px; text-align: left; }
+        .calc-row { display: flex; gap: 5px; align-items: center; margin-bottom: 5px; }
         #admin-panel { display: none; }
     </style>
 </head>
@@ -39,11 +40,13 @@
 
     <div id="tab-calculadora" class="tab-content" style="display:none;">
         <div class="card">
-            <h2>Calculadora de Punts</h2>
-            <p>Selecciona castells per veure quants punts sumarien en una diada:</p>
-            <div style="display:flex; gap:5px;"><select id="c1" onchange="updateCalc()"></select><select id="ce1" onchange="updateCalc()"><option value="d">D</option><option value="c">C</option></select></div>
-            <div style="display:flex; gap:5px;"><select id="c2" onchange="updateCalc()"></select><select id="ce2" onchange="updateCalc()"><option value="d">D</option><option value="c">C</option></select></div>
-            <div style="display:flex; gap:5px;"><select id="c3" onchange="updateCalc()"></select><select id="ce3" onchange="updateCalc()"><option value="d">D</option><option value="c">C</option></select></div>
+            <h2>🧮 Calculadora de Concurs</h2>
+            <p>Simula els punts d'una diada de fins a 5 rondes:</p>
+            <div class="calc-row"><select id="c1" onchange="updateCalc()"></select><select id="ce1" onchange="updateCalc()" style="width:70px;"><option value="d">D</option><option value="c">C</option></select></div>
+            <div class="calc-row"><select id="c2" onchange="updateCalc()"></select><select id="ce2" onchange="updateCalc()" style="width:70px;"><option value="d">D</option><option value="c">C</option></select></div>
+            <div class="calc-row"><select id="c3" onchange="updateCalc()"></select><select id="ce3" onchange="updateCalc()" style="width:70px;"><option value="d">D</option><option value="c">C</option></select></div>
+            <div class="calc-row"><select id="c4" onchange="updateCalc()"></select><select id="ce4" onchange="updateCalc()" style="width:70px;"><option value="d">D</option><option value="c">C</option></select></div>
+            <div class="calc-row"><select id="c5" onchange="updateCalc()"></select><select id="ce5" onchange="updateCalc()" style="width:70px;"><option value="d">D</option><option value="c">C</option></select></div>
             <div class="total-box">SUMA TOTAL: <span id="calcTotalTxt">0</span> pts</div>
             <button class="btn-enviar" style="background:#666;" onclick="resetCalc()">Netejar Calculadora</button>
         </div>
@@ -92,7 +95,7 @@
         const punts = {"pd4n":{"d":35,"c":18},"pd4":{"d":45,"c":23},"pd5n":{"d":55,"c":28},"pd5":{"d":65,"c":33},"pd6n":{"d":75,"c":38},"pd6":{"d":85,"c":43},"2d6n":{"d":135,"c":68},"2d6":{"d":140,"c":70},"2d7n":{"d":170,"c":85},"2d7":{"d":180,"c":90},"3d6n":{"d":245,"c":123},"4d6n":{"d":250,"c":125},"3d6":{"d":255,"c":128},"4d6":{"d":260,"c":130},"2d6an":{"d":265,"c":133},"pd7n":{"d":270,"c":135},"2d6a":{"d":275,"c":138},"pd7":{"d":280,"c":140},"4d6an":{"d":285,"c":143},"3d6an":{"d":290,"c":145},"4d6a":{"d":295,"c":148},"3d6a":{"d":300,"c":150},"pd8n":{"d":360,"c":180},"pd8":{"d":370,"c":185},"3d7n":{"d":395,"c":198},"3d7":{"d":405,"c":203},"2d8n":{"d":410,"c":205},"4d7n":{"d":415,"c":208},"2d8sf":{"d":420,"c":210},"4d7":{"d":425,"c":213},"pd7f":{"d":450,"c":225},"2d8f":{"d":500,"c":250},"pd9n":{"d":500,"c":250},"3d7an":{"d":515,"c":258},"3d7a":{"d":525,"c":263},"4d7an":{"d":545,"c":273},"pd9sf":{"d":550,"c":275},"4d7a":{"d":555,"c":278},"5d6n":{"d":595,"c":298},"pd8f":{"d":600,"c":300},"5d6":{"d":605,"c":303},"7d6n":{"d":715,"c":358},"7d6":{"d":725,"c":363},"5d6an":{"d":755,"c":378},"5d6a":{"d":775,"c":388},"pd8fm":{"d":780,"c":390},"pd9f":{"d":800,"c":400},"3d8n":{"d":845,"c":423},"3d8":{"d":865,"c":433},"7d6an":{"d":885,"c":443},"7d6a":{"d":895,"c":448},"pd9fm":{"d":900,"c":450},"2d9n":{"d":900,"c":450},"3d8an":{"d":950,"c":475},"2d9sf":{"d":950,"c":475},"3d8a":{"d":960,"c":480},"5d7n":{"d":965,"c":483},"4d8n":{"d":970,"c":485},"5d7":{"d":975,"c":488},"4d8":{"d":990,"c":495},"2d9f":{"d":1000,"c":500},"pd9fmp":{"d":1000,"c":500},"3d9n":{"d":1050,"c":525},"4d8an":{"d":1050,"c":525},"4d8a":{"d":1060,"c":530},"5d7an":{"d":1070,"c":535},"5d7a":{"d":1080,"c":540},"7d7n":{"d":1095,"c":548},"3d9sf":{"d":1100,"c":550},"2d9fm":{"d":1100,"c":550},"7d7":{"d":1105,"c":553},"7d7an":{"d":1190,"c":595},"3d9f":{"d":1200,"c":600},"7d7a":{"d":1210,"c":605},"4d9n":{"d":1450,"c":725},"4d9sf":{"d":1500,"c":750},"pd10n":{"d":1500,"c":750},"9d6n":{"d":1540,"c":770},"pd10sf":{"d":1550,"c":775},"9d6":{"d":1560,"c":780},"2d10n":{"d":1600,"c":800},"pd10f":{"d":1650,"c":825},"5d8n":{"d":1670,"c":835},"2d10sf":{"d":1700,"c":850},"3d9an":{"d":1700,"c":850},"3d9a":{"d":1750,"c":875},"pd10fm":{"d":1750,"c":875},"9d7n":{"d":1750,"c":875},"5d8":{"d":1790,"c":895},"7d8n":{"d":1795,"c":898},"4d9f":{"d":1800,"c":900},"2d10f":{"d":1800,"c":900},"4d9an":{"d":1800,"c":900},"9d7":{"d":1800,"c":900},"7d8":{"d":1815,"c":908},"3d9fa":{"d":1850,"c":925},"4d9a":{"d":1850,"c":925},"5d8an":{"d":1915,"c":958},"5d8a":{"d":1935,"c":968},"4d9fa":{"d":1950,"c":975},"pd10fmp":{"d":1980,"c":990},"2d10fm":{"d":2000,"c":1000},"2d10fmp":{"d":2200,"c":1100},"5d9n":{"d":2700,"c":1350},"5d9sf":{"d":2750,"c":1375},"5d9f":{"d":2850,"c":1425},"3d10n":{"d":2900,"c":1450},"3d10sf":{"d":2950,"c":1475},"3d10f":{"d":3050,"c":1525},"3d10fm":{"d":3150,"c":1575},"pd10fmpa":{"d":3300,"c":1650}};
 
         const castNames = Object.keys(punts);
-        ["r1", "r2", "r3", "pilarNom", "c1", "c2", "c3"].forEach(id => {
+        ["r1", "r2", "r3", "pilarNom", "c1", "c2", "c3", "c4", "c5"].forEach(id => {
             const s = document.getElementById(id);
             s.innerHTML = `<option value="">-- Tria Castell --</option>`;
             castNames.forEach(k => {
@@ -103,7 +106,7 @@
 
         function updateCalc() {
             let t = 0;
-            [1,2,3].forEach(i => {
+            [1,2,3,4,5].forEach(i => {
                 let c = document.getElementById("c"+i).value;
                 let m = document.getElementById("ce"+i).value;
                 if(punts[c]) t += punts[c][m];
@@ -112,7 +115,7 @@
         }
 
         function resetCalc() {
-            [1,2,3].forEach(i => { document.getElementById("c"+i).value = ""; });
+            [1,2,3,4,5].forEach(i => { document.getElementById("c"+i).value = ""; });
             updateCalc();
         }
 
@@ -128,12 +131,10 @@
         }
 
         async function loadData() {
-            try {
-                const res = await fetch(WEB_APP_URL);
-                const dades = await res.json();
-                renderRanking(dades);
-                renderHistoric(dades);
-            } catch (e) { console.error(e); }
+            const res = await fetch(WEB_APP_URL);
+            const dades = await res.json();
+            renderRanking(dades);
+            renderHistoric(dades);
         }
 
         function renderRanking(rows) {
@@ -192,7 +193,10 @@
             document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
             document.getElementById('tab-' + t).style.display = 'block';
             document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
-            document.getElementById('btn-' + t.substring(0,4)).classList.add('active');
+            // Lògica per activar el botó correcte
+            if(t === 'ranking') document.getElementById('btn-rank').classList.add('active');
+            if(t === 'calculadora') document.getElementById('btn-calc').classList.add('active');
+            if(t === 'historic') document.getElementById('btn-hist').classList.add('active');
             if(t !== 'admin-panel' && t !== 'calculadora') loadData();
         }
 
