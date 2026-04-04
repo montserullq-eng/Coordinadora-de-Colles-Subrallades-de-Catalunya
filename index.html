@@ -11,13 +11,11 @@
         .nav { display: flex; gap: 5px; margin-bottom: 20px; position: sticky; top: 0; background: #f0f2f5; z-index: 10; padding: 5px 0; overflow-x: auto; }
         .nav button { flex: 1; padding: 10px; border: none; border-radius: 8px; background: #ccc; font-weight: bold; cursor: pointer; white-space: nowrap; }
         .nav button.active { background: #d32f2f; color: white; }
-        
         input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
         .btn-enviar { background: #2e7d32; color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 10px; }
         .btn-eina { border: none; padding: 5px 8px; border-radius: 5px; cursor: pointer; color: white; margin-left: 2px; }
         .btn-edit { background: #ffa000; }
         .btn-del { background: #ff4d4d; }
-        
         .ranking-row { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #eee; font-size: 16px; }
         .total-box { font-size: 22px; font-weight: bold; color: #d32f2f; text-align: center; background: #fff5f5; padding: 15px; border-radius: 8px; margin: 10px 0; border: 2px dashed #d32f2f; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
@@ -150,7 +148,14 @@
 
         function checkAdmin() {
             if (isAdmin) { showTab('admin'); }
-            else if (prompt("PIN d'Administrador:") === PIN_ADMIN) { isAdmin = true; showTab('admin'); loadData(); }
+            else {
+                let p = prompt("PIN d'Administrador:");
+                if (p === PIN_ADMIN) { 
+                    isAdmin = true; 
+                    loadData(); 
+                    showTab('admin'); 
+                }
+            }
         }
 
         function editRow(idx) {
@@ -178,14 +183,13 @@
         async function deleteRow(idx) {
             if(!confirm("Esborrar diada permanentment?")) return;
             try {
-                // En l'esborrat, el Sheets espera l'índex de fila (base 0 o 1 segons el teu script .gs)
                 await fetch(WEB_APP_URL, { 
                     method: 'POST', 
                     body: JSON.stringify({action: "delete", rowIndex: idx}) 
                 });
                 alert("Diada eliminada.");
                 loadData();
-            } catch(e) { alert("Error en connectar amb el servidor."); }
+            } catch(e) { alert("Error"); }
         }
 
         document.getElementById("castellsForm").onsubmit = async (e) => {
@@ -211,7 +215,7 @@
                 comentaris: document.getElementById("comentaris").value
             };
             await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(d) });
-            alert(editIdx ? "Diada actualitzada!" : "Diada publicada!");
+            alert(editIdx ? "Actualitzat!" : "Publicat!");
             resetAdminForm();
             loadData();
             showTab('historic');
