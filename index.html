@@ -11,13 +11,11 @@
         .nav { display: flex; gap: 5px; margin-bottom: 20px; position: sticky; top: 0; background: #f0f2f5; z-index: 10; padding: 5px 0; overflow-x: auto; }
         .nav button { flex: 1; padding: 10px; border: none; border-radius: 8px; background: #ccc; font-weight: bold; cursor: pointer; white-space: nowrap; }
         .nav button.active { background: #d32f2f; color: white; }
-        
         input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
         .btn-enviar { background: #2e7d32; color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 10px; }
         .btn-eina { border: none; padding: 5px 8px; border-radius: 5px; cursor: pointer; color: white; margin-left: 2px; }
         .btn-edit { background: #ffa000; }
         .btn-del { background: #ff4d4d; }
-        
         .ranking-row { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #eee; font-size: 16px; }
         .total-box { font-size: 22px; font-weight: bold; color: #d32f2f; text-align: center; background: #fff5f5; padding: 15px; border-radius: 8px; margin: 10px 0; border: 2px dashed #d32f2f; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
@@ -174,7 +172,11 @@
 
         function checkAdmin() {
             if (isAdmin) { showTab('admin'); }
-            else if (prompt("PIN d'Administrador:") === PIN_ADMIN) { isAdmin = true; showTab('admin'); loadData(); }
+            else if (prompt("PIN d'Administrador:") === PIN_ADMIN) { 
+                isAdmin = true; 
+                showTab('admin'); 
+                loadData(); 
+            }
         }
 
         function editRow(idx) {
@@ -186,15 +188,36 @@
             document.getElementById("r1").value = r[3];
             document.getElementById("r2").value = r[5];
             document.getElementById("r3").value = r[7];
-            document.getElementById("pilarNom").value = r[9].split(" (")[0];
-            document.getElementById("extraTxt").value = r[10];
-            document.getElementById("comentaris").value = r[12];
+            
+            if(r[9]) {
+                let pNom = r[9].split(" (")[0];
+                let pEstat = r[9].includes("(c)") ? "c" : "d";
+                document.getElementById("pilarNom").value = pNom;
+                document.getElementById("pilarEstat").value = pEstat;
+            }
+            
+            document.getElementById("extraTxt").value = r[10] || "";
+            document.getElementById("comentaris").value = r[12] || "";
             
             document.getElementById("admin-titol").innerText = "✏️ Modificar Diada";
             document.getElementById("btn-submit").innerText = "Guardar Canvis";
             document.getElementById("btn-cancel").style.display = "block";
             showTab('admin');
             calcAdminTotal();
+        }
+
+        async function deleteRow(idx) {
+            if(!confirm("Esborrar diada permanentment?")) return;
+            const btn = event.target;
+            btn.innerText = "...";
+            try {
+                await fetch(WEB_APP_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify({action: "delete", rowIndex: idx}) 
+                });
+                alert("Diada eliminada.");
+                loadData();
+            } catch(e) { alert("Error"); }
         }
 
         function resetAdminForm() {
@@ -204,12 +227,6 @@
             document.getElementById("btn-submit").innerText = "Publicar Diada";
             document.getElementById("btn-cancel").style.display = "none";
             document.getElementById("adminTotalTxt").innerText = "0";
-        }
-
-        async function deleteRow(idx) {
-            if(!confirm("Esborrar diada?")) return;
-            await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({action: "delete", rowIndex: idx}) });
-            loadData();
         }
 
         document.getElementById("castellsForm").onsubmit = async (e) => {
@@ -238,7 +255,10 @@
             
             await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(d) });
             alert(editIdx ? "Diada actualitzada!" : "Diada publicada!");
-            location.reload();
+            resetAdminForm();
+            showTab('historic');
+            loadData();
+            btn.disabled = false;
         };
 
         function showTab(t) {
